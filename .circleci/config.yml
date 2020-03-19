@@ -236,6 +236,10 @@ jobs:
 
             # Generate the mojaloop anchore-policy
             cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js /tmp/mojaloop-policy.json
+      - run:
+          name: Pull base image locally
+          command: |
+            docker pull node:12.16.0-alpine
       # Analyze the base image for comparison
       # Note: this could be pre-loaded for efficency, but we will look at optimizations later
       - anchore/analyze_local_image:
