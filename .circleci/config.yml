@@ -7,7 +7,7 @@ version: 2.1
 # Orbs used in this pipeline
 ###
 orbs:
-  anchore: anchore/anchore-engine@1.6.0
+  anchore: anchore/anchore-engine@1.6.6
   deploy-kube: mojaloop/deployment@0.1.6
 
 ##
@@ -244,6 +244,7 @@ jobs:
       # Note: this could be pre-loaded for efficency, but we will look at optimizations later
       - anchore/analyze_local_image:
           image_name: docker.io/node:12.16.0-alpine
+          # TODO: is this even respecting this bundle?
           policy_bundle_file_path: /tmp/mojaloop-policy.json
           policy_failure: false
           timeout: '500'
@@ -278,10 +279,10 @@ jobs:
           name: Evaluate failures
           command: |
             # TODO: find out which reports are the base and derived to run the tool
+            pwd
             ls -la anchore-reports
 
-            # TODO: change paths to proper files
-            cd /tmp/ci-config/container-scanning && ./anchore-result-diff.js example-base-result.json example-derived-result.json
+            /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
 
       - store_artifacts:
           path: anchore-reports
