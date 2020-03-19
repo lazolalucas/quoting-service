@@ -219,6 +219,9 @@ jobs:
       - run:
           name: Install AWS CLI dependencies
           command: *defaults_awsCliDependencies
+      - run:
+          name: Install nodejs
+          command: apk add --update nodejs npm
       - attach_workspace:
           at: /tmp
       - run:
