@@ -229,7 +229,7 @@ jobs:
           command: |
             git clone https://github.com/mojaloop/ci-config /tmp/ci-config
             # TODO: remove step once we merge in this feature branch
-            git fetch && git checkout feature/anchore-scanning
+            cd /tmp/ci-config && git fetch && git checkout feature/anchore-scanning
 
             # Generate the mojaloop anchore-policy
             cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js /tmp/mojaloop-policy.json
