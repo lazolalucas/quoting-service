@@ -235,27 +235,30 @@ jobs:
             cd /tmp/ci-config && git fetch && git checkout feature/anchore-scanning
             pwd
             ls -la
+            ls -la ~/
             # Generate the mojaloop anchore-policy
-            cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js /anchore-engine/ml-policy.json
+            mkdir -p ~/project/.circleci/.anchore
+            cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
       - run:
           name: Pull base image locally
           command: |
             docker pull node:12.16.0-alpine
       # Analyze the base image for comparison
       # Note: this could be pre-loaded for efficency, but we will look at optimizations later
-      - anchore/analyze_local_image:
-          image_name: docker.io/node:12.16.0-alpine
-          # TODO: is this even respecting this bundle? - maybe this can't be an absolute path
-          policy_bundle_file_path: ml-policy.json
-          policy_failure: false
-          timeout: '500'
+      # - anchore/analyze_local_image:
+      #     image_name: docker.io/node:12.16.0-alpine
+      #     # TODO: is this even respecting this bundle? - maybe this can't be an absolute path
+      #     policy_bundle_file_path: ml-policy.json
+      #     policy_failure: false
+      #     timeout: '500'
       - anchore/analyze_local_image:
           dockerfile_path: ./Dockerfile
-          image_name: ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}
+          image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
           # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
           policy_failure: false
           timeout: '500'
-          policy_bundle_file_path: ml-policy.json
+          # Note: Anchore CLI is very picky about this json file path, and other paths might not work
+          policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
       - run:
           name: Summarize Failures.
           command: |
