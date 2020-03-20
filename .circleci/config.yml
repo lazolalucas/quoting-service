@@ -252,7 +252,7 @@ jobs:
       #     policy_failure: false
       #     timeout: '500'
       - anchore/analyze_local_image:
-          dockerfile_path: ./Dockerfile
+          # dockerfile_path: ./Dockerfile
           image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
           # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
           policy_failure: false
