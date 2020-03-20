@@ -233,9 +233,10 @@ jobs:
             git clone https://github.com/mojaloop/ci-config /tmp/ci-config
             # TODO: remove step once we merge in this feature branch
             cd /tmp/ci-config && git fetch && git checkout feature/anchore-scanning
-
+            pwd
+            ls -la
             # Generate the mojaloop anchore-policy
-            cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js /tmp/mojaloop-policy.json
+            cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js /anchore-engine/ml-policy.json
       - run:
           name: Pull base image locally
           command: |
@@ -244,8 +245,8 @@ jobs:
       # Note: this could be pre-loaded for efficency, but we will look at optimizations later
       - anchore/analyze_local_image:
           image_name: docker.io/node:12.16.0-alpine
-          # TODO: is this even respecting this bundle?
-          policy_bundle_file_path: /tmp/mojaloop-policy.json
+          # TODO: is this even respecting this bundle? - maybe this can't be an absolute path
+          policy_bundle_file_path: ml-policy.json
           policy_failure: false
           timeout: '500'
       - anchore/analyze_local_image:
@@ -254,7 +255,7 @@ jobs:
           # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
           policy_failure: false
           timeout: '500'
-          policy_bundle_file_path: /tmp/mojaloop-policy.json
+          policy_bundle_file_path: ml-policy.json
       - run:
           name: Summarize Failures.
           command: |
@@ -393,7 +394,6 @@ workflows:
       - build:
           context: org-global
           requires:
-            - setup
             - test-unit
             - test-coverage
             - vulnerability-check
@@ -429,7 +429,6 @@ workflows:
           requires:
             - license-scan
             - image-scan
-            - build
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*(\-snapshot)?(\-hotfix(\.[0-9]+))?/
