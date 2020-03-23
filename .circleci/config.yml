@@ -244,7 +244,7 @@ jobs:
           command: |
             docker pull node:12.16.0-alpine
       # Analyze the base and derived image
-      # Note: we could pre-load the base image for efficency, but we will look at optimizations later
+      # Note: we could pre-load the base image's scan result for efficency, but we will look at optimizations later
       - anchore/analyze_local_image:
           image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
           # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
@@ -273,15 +273,14 @@ jobs:
             aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/${CIRCLE_PROJECT_REPONAME}/ --recursive
             aws s3 rm ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive --exclude "*" --include "${CIRCLE_PROJECT_REPONAME}*"
             aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive
-      - run:
-          name: Evaluate failures
-          command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
+      # TODO: reenable once we've tested announcement changes
+      # - run:
+      #     name: Evaluate failures
+      #     command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
       - slack/status:
           fail_only: true
           webhook: "$SLACK_WEBHOOK_ANNOUNCEMENT"
           failure_message: "Anchore Image Scan failed for: $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG"
-          # only_for_branches: "master" # Optional: If set, a specific branch for which status updates will be sent. In this case, only for pushes to master branch.
-
       - store_artifacts:
           path: anchore-reports
 
@@ -308,14 +307,18 @@ jobs:
             docker push $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG
             echo "Publishing $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$RELEASE_TAG"
             docker push $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$RELEASE_TAG
-      - run:
-          name: Slack announcement for tag releases
-          command: |
-            curl -X POST \
-              $SLACK_WEBHOOK_ANNOUNCEMENT \
-              -H 'Content-type: application/json' \
-              -H 'cache-control: no-cache' \
-              -d "{\"text\": \"*${CIRCLE_PROJECT_REPONAME}* - Release \`${CIRCLE_TAG}\`: https://github.com/mojaloop/${CIRCLE_PROJECT_REPONAME}/releases/tag/${CIRCLE_TAG}\"}"
+      - slack/status:
+          webhook: "$SLACK_WEBHOOK_ANNOUNCEMENT"
+          success_message: "*${CIRCLE_PROJECT_REPONAME}* - Release ${CIRCLE_TAG}: https://github.com/mojaloop/${CIRCLE_PROJECT_REPONAME}/releases/tag/${CIRCLE_TAG}"
+      # TODO: remove
+      # - run:
+      #     name: Slack announcement for tag releases
+      #     command: |
+      #       curl -X POST \
+      #         $SLACK_WEBHOOK_ANNOUNCEMENT \
+      #         -H 'Content-type: application/json' \
+      #         -H 'cache-control: no-cache' \
+      #         -d "{\"text\": \"*${CIRCLE_PROJECT_REPONAME}* - Release \`${CIRCLE_TAG}\`: https://github.com/mojaloop/${CIRCLE_PROJECT_REPONAME}/releases/tag/${CIRCLE_TAG}\"}"
         
   deploy:
     executor: deploy-kube/helm-kube
