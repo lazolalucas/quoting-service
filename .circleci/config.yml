@@ -233,31 +233,24 @@ jobs:
             git clone https://github.com/mojaloop/ci-config /tmp/ci-config
             # TODO: remove step once we merge in this feature branch
             cd /tmp/ci-config && git fetch && git checkout feature/anchore-scanning
-            pwd
-            ls -la
-            ls -la ~/
+            
             # Generate the mojaloop anchore-policy
             mkdir -p ~/project/.circleci/.anchore
             cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
+            ls ~/project/.circleci/.anchore/policy_bundle.json
       - run:
           name: Pull base image locally
           command: |
             docker pull node:12.16.0-alpine
-      # Analyze the base image for comparison
-      # Note: this could be pre-loaded for efficency, but we will look at optimizations later
-      # - anchore/analyze_local_image:
-      #     image_name: docker.io/node:12.16.0-alpine
-      #     # TODO: is this even respecting this bundle? - maybe this can't be an absolute path
-      #     policy_bundle_file_path: ml-policy.json
-      #     policy_failure: false
-      #     timeout: '500'
+      # Analyze the base and derived image
+      # Note: we could pre-load the base image for efficency, but we will look at optimizations later
       - anchore/analyze_local_image:
-          # dockerfile_path: ./Dockerfile
           image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
           # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
           policy_failure: false
           timeout: '500'
           # Note: Anchore CLI is very picky about this json file path, and other paths might not work
+          # TODO: it still has issues with this policy...
           policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
       - run:
           name: Summarize Failures.
@@ -281,12 +274,12 @@ jobs:
             aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive
       - run:
           name: Evaluate failures
-          command: |
-            # TODO: find out which reports are the base and derived to run the tool
-            pwd
-            ls -la anchore-reports
-
-            /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
+          command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
+      - slack/status:
+          fail_only: true
+          webhook: "$SLACK_WEBHOOK_ANNOUNCEMENT"
+          failure_message: "Anchore Image Scan failed for: $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG"
+          # only_for_branches: "master" # Optional: If set, a specific branch for which status updates will be sent. In this case, only for pushes to master branch.
 
       - store_artifacts:
           path: anchore-reports
