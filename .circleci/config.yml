@@ -236,9 +236,10 @@ jobs:
             cd /tmp/ci-config && git fetch && git checkout feature/anchore-scanning
             
             # Generate the mojaloop anchore-policy
-            mkdir -p ~/project/.circleci/.anchore
-            cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
-            ls ~/project/.circleci/.anchore/policy_bundle.json
+            # TODO: Reenable once we've debugged this!
+            # mkdir -p ~/project/.circleci/.anchore
+            # cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
+            # ls ~/project/.circleci/.anchore/policy_bundle.json
       - run:
           name: Pull base image locally
           command: |
@@ -273,14 +274,13 @@ jobs:
             aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/${CIRCLE_PROJECT_REPONAME}/ --recursive
             aws s3 rm ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive --exclude "*" --include "${CIRCLE_PROJECT_REPONAME}*"
             aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive
-      # TODO: reenable once we've tested announcement changes
-      # - run:
-      #     name: Evaluate failures
-      #     command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
+      - run:
+          name: Evaluate failures
+          command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
       - slack/status:
           fail_only: true
           webhook: "$SLACK_WEBHOOK_ANNOUNCEMENT"
-          failure_message: "Anchore Image Scan failed for: $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG"
+          failure_message: "Anchore Image Scan failed for: `$DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG`"
       - store_artifacts:
           path: anchore-reports
 
@@ -309,17 +309,8 @@ jobs:
             docker push $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$RELEASE_TAG
       - slack/status:
           webhook: "$SLACK_WEBHOOK_ANNOUNCEMENT"
-          success_message: "*${CIRCLE_PROJECT_REPONAME}* - Release ${CIRCLE_TAG}: https://github.com/mojaloop/${CIRCLE_PROJECT_REPONAME}/releases/tag/${CIRCLE_TAG}"
-      # TODO: remove
-      # - run:
-      #     name: Slack announcement for tag releases
-      #     command: |
-      #       curl -X POST \
-      #         $SLACK_WEBHOOK_ANNOUNCEMENT \
-      #         -H 'Content-type: application/json' \
-      #         -H 'cache-control: no-cache' \
-      #         -d "{\"text\": \"*${CIRCLE_PROJECT_REPONAME}* - Release \`${CIRCLE_TAG}\`: https://github.com/mojaloop/${CIRCLE_PROJECT_REPONAME}/releases/tag/${CIRCLE_TAG}\"}"
-        
+          success_message: "*${CIRCLE_PROJECT_REPONAME}* - Release `${CIRCLE_TAG}`: https://github.com/mojaloop/${CIRCLE_PROJECT_REPONAME}/releases/tag/${CIRCLE_TAG}"
+      
   deploy:
     executor: deploy-kube/helm-kube
     steps:
