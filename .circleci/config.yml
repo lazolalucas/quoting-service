@@ -218,6 +218,9 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
+          name: Install general dependencies
+          command: *defaults_Dependencies
+      - run:
           name: Install AWS CLI dependencies
           command: *defaults_awsCliDependencies
       - run:
@@ -239,7 +242,7 @@ jobs:
             # TODO: Reenable once we've debugged this!
             # mkdir -p ~/project/.circleci/.anchore
             # cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
-            ls ~/project/.circleci/.anchore/policy_bundle.json
+            ls /root/project/.circleci/.anchore/policy_bundle.json
       - run:
           name: Pull base image locally
           command: |
@@ -253,7 +256,8 @@ jobs:
           timeout: '500'
           # Note: Anchore CLI is very picky about this json file path, and other paths might not work
           # TODO: it still has issues with this policy...
-          policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
+          # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
+          policy_bundle_file_path: /root/project/.circleci/.anchore/policy_bundle.json
       - run:
           name: Summarize Failures.
           command: |
