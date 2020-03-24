@@ -240,6 +240,10 @@ jobs:
             # mkdir -p ~/project/.circleci/.anchore
             # cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
             # ls ~/project/.circleci/.anchore/policy_bundle.json
+
+            mkdir -p /tmp/base_image_scans
+            aws s3 cp ${AWS_S3_DIR_ANCHORE_REPORTS}/base_image_scans/ /tmp/base_image_scans/ --recursive
+            # TODO: check the age of the scans, they shouldn't be more than 1 week old
       - run:
           name: Pull base image locally
           command: |
@@ -247,7 +251,8 @@ jobs:
       # Analyze the base and derived image
       # Note: we could pre-load the base image's scan result for efficency, but we will look at optimizations later
       - anchore/analyze_local_image:
-          image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
+          # image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
+          image_name: "${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
           # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
           policy_failure: false
           timeout: '500'
@@ -276,7 +281,9 @@ jobs:
             aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive
       - run:
           name: Evaluate failures
-          command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
+          command: |
+            # /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
+            /tmp/ci-config/container-scanning/anchore-result-diff.js /tmp/base_image_scans/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
       - slack/status:
           fail_only: true
           webhook: "$SLACK_WEBHOOK_ANNOUNCEMENT"
