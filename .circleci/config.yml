@@ -254,6 +254,17 @@ jobs:
           # Note: Anchore CLI is very picky about this json file path, and other paths might not work
           # TODO: it still has issues with this policy...
           # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
+          # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
+
+      # Maybe try another evaluation step? Perhaps this will respect the given bundle file
+      - anchore/policy_evaluation:
+          # TODO: can we specify 2 names here? 
+          image_name: "${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
+          # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
+          policy_failure: false
+          # Note: Anchore CLI is very picky about this json file path, and other paths might not work
+          # TODO: it still has issues with this policy...
+          # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
           policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
       - run:
           name: Summarize Failures.
