@@ -262,10 +262,7 @@ jobs:
           image_name: "${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
           # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
           policy_failure: false
-          # Note: Anchore CLI is very picky about this json file path, and other paths might not work
-          # TODO: it still has issues with this policy...
           # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
-          policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
       - run:
           name: Summarize Failures.
           command: |
@@ -289,10 +286,11 @@ jobs:
       - run:
           name: Evaluate failures
           command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
-      - slack/status:
-          fail_only: true
-          webhook: "$SLACK_WEBHOOK_ANNOUNCEMENT"
-          failure_message: "Anchore Image Scan failed for: `$DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG`"
+      # TODO: reenable
+      # - slack/status:
+      #     fail_only: true
+      #     webhook: "$SLACK_WEBHOOK_ANNOUNCEMENT"
+      #     failure_message: "Anchore Image Scan failed for: $DOCKER_ORG/$CIRCLE_PROJECT_REPONAME:$CIRCLE_TAG"
       - store_artifacts:
           path: anchore-reports
 
