@@ -226,9 +226,9 @@ jobs:
           command: *defaults_awsCliDependencies
       - run:
           name: Install dependencies
-          command: |
-            apk add --update nodejs npm bash py-pip docker
-            pip install docker-compose
+          command: pip install docker-compose
+      #       apk add --update nodejs npm bash py-pip docker
+      #       pip install docker-compose
           # command: apk add --update nodejs npm bash
       - attach_workspace:
           at: /tmp
