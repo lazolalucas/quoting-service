@@ -220,7 +220,7 @@ jobs:
     # executor: anchore/anchore_engine
     executor: alpine-machine
     steps:
-      - setup_remote_docker
+      # - setup_remote_docker
       - checkout
       - run:
           name: Install AWS CLI dependencies
