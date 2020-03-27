@@ -219,6 +219,9 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
+          name: Install general dependencies
+          command: *defaults_Dependencies
+      - run:
           name: Install AWS CLI dependencies
           command: *defaults_awsCliDependencies
       - run:
