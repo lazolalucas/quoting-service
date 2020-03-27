@@ -225,11 +225,11 @@ jobs:
           name: Install AWS CLI dependencies
           command: *defaults_awsCliDependencies
       - run:
-          name: Install dependencies
-          command: pip install docker-compose
-      #       apk add --update nodejs npm bash py-pip docker
-      #       pip install docker-compose
-          # command: apk add --update nodejs npm bash
+          name: Install docker dependencies
+          command: |
+            apk add --update py-pip docker
+            apk add --update python-dev libffi-dev openssl-dev gcc libc-dev make
+            pip install docker-compose
       - attach_workspace:
           at: /tmp
       - run:
