@@ -57,10 +57,6 @@ executors:
     machine:
       image: ubuntu-1604:201903-01
 
-  alpine-machine:
-    machine:
-      image: node:12.16.1-alpine
-
 ##
 # Jobs
 #
@@ -218,9 +214,9 @@ jobs:
 
   image-scan:
     # executor: anchore/anchore_engine
-    executor: alpine-machine
+    executor: default-docker
     steps:
-      # - setup_remote_docker
+      - setup_remote_docker
       - checkout
       - run:
           name: Install AWS CLI dependencies
