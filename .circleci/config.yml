@@ -257,6 +257,7 @@ jobs:
           # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
 
       # Maybe try another evaluation step? Perhaps this will respect the given bundle file
+      # Nope, this just doesn't work. Let's try running it manually?
       - anchore/policy_evaluation:
           # TODO: can we specify 2 names here? 
           image_name: "${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
