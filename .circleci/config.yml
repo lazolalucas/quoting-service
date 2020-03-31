@@ -269,7 +269,7 @@ jobs:
           timeout: '500'
           # Note: Anchore CLI is very picky about this json file path, and other paths might not work
           # TODO: it still has issues with this policy...
-          policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
+          # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
           # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
 
       # Maybe try another evaluation step? Perhaps this will respect the given bundle file
