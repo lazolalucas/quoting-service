@@ -243,30 +243,32 @@ jobs:
             # Generate the mojaloop anchore-policy
             # TODO: Reenable once we've debugged this!
             mkdir -p ~/project/.circleci/.anchore
-            cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
+            # TODO: put this back
+            # cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
             # ls /root/project/.circleci/.anchore/policy_bundle.json
+            cp /tmp/ci-config/container-scanning/example_policy_docker.json ~/project/.circleci/.anchore/policy_bundle.json
       - run:
           name: Pull base image locally
           command: |
             docker pull node:12.16.0-alpine
-      - run:
-          name: Run anchore-cli scan (using custom script)
-          command: |
-            export POLICY_BUNDLE="~/project/.circleci/.anchore/policy_bundle.json"
-            export RESULT_DIR="./anchore-reports"
-            /tmp/ci-config/container-scanning/scan_images.sh
+      # - run:
+      #     name: Run anchore-cli scan (using custom script)
+      #     command: |
+      #       export POLICY_BUNDLE="~/project/.circleci/.anchore/policy_bundle.json"
+      #       export RESULT_DIR="./anchore-reports"
+      #       /tmp/ci-config/container-scanning/scan_images.sh "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
       
       # Analyze the base and derived image
       # Note: It seems images are scanned in parallel, so preloading the base image result doesn't give us any real performance gain
-      # - anchore/analyze_local_image:
-      #     image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
-      #     # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
-      #     policy_failure: false
-      #     timeout: '500'
-      #     # Note: Anchore CLI is very picky about this json file path, and other paths might not work
-      #     # TODO: it still has issues with this policy...
-      #     # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
-      #     # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
+      - anchore/analyze_local_image:
+          image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
+          # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
+          policy_failure: false
+          timeout: '500'
+          # Note: Anchore CLI is very picky about this json file path, and other paths might not work
+          # TODO: it still has issues with this policy...
+          policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
+          # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
 
       # Maybe try another evaluation step? Perhaps this will respect the given bundle file
       # Nope, this just doesn't work. Let's try running it manually?
@@ -278,29 +280,29 @@ jobs:
       #     # policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
 
       # TODO: reenable once everything is exporting correctly
-      # - run:
-      #     name: Summarize Failures.
-      #     command: |
-      #       if [[ ! $(which jq) ]]; then
-      #         (set +o pipefail; apk add jq || apt-get install -y jq || yum install -y jq)
-      #       fi
-      #       if [[ $(ls anchore-reports/*content-os*.json 2> /dev/null) ]]; then
-      #         printf "\n%s\n" "The following OS packages are installed:"
-      #         jq '[.content | sort_by(.package) | .[] | {package: .package, version: .version}]' anchore-reports/*content-os*.json
-      #       fi
-      #       if [[ $(ls anchore-reports/*vuln*.json 2> /dev/null) ]]; then
-      #         printf "\n%s\n" "The following vulnerabilities were found:"
-      #         jq '[.vulnerabilities | group_by(.package) | .[] | {package: .[0].package, vuln: [.[].vuln]}]' anchore-reports/*vuln*.json
-      #       fi
-      # - run:
-      #     name: Upload Anchore reports to s3
-      #     command: |
-      #       aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/${CIRCLE_PROJECT_REPONAME}/ --recursive
-      #       aws s3 rm ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive --exclude "*" --include "${CIRCLE_PROJECT_REPONAME}*"
-      #       aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive
-      # - run:
-      #     name: Evaluate failures
-      #     command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
+      - run:
+          name: Summarize Failures.
+          command: |
+            if [[ ! $(which jq) ]]; then
+              (set +o pipefail; apk add jq || apt-get install -y jq || yum install -y jq)
+            fi
+            if [[ $(ls anchore-reports/*content-os*.json 2> /dev/null) ]]; then
+              printf "\n%s\n" "The following OS packages are installed:"
+              jq '[.content | sort_by(.package) | .[] | {package: .package, version: .version}]' anchore-reports/*content-os*.json
+            fi
+            if [[ $(ls anchore-reports/*vuln*.json 2> /dev/null) ]]; then
+              printf "\n%s\n" "The following vulnerabilities were found:"
+              jq '[.vulnerabilities | group_by(.package) | .[] | {package: .[0].package, vuln: [.[].vuln]}]' anchore-reports/*vuln*.json
+            fi
+      - run:
+          name: Upload Anchore reports to s3
+          command: |
+            aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/${CIRCLE_PROJECT_REPONAME}/ --recursive
+            aws s3 rm ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive --exclude "*" --include "${CIRCLE_PROJECT_REPONAME}*"
+            aws s3 cp anchore-reports ${AWS_S3_DIR_ANCHORE_REPORTS}/latest/ --recursive
+      - run:
+          name: Evaluate failures
+          command: /tmp/ci-config/container-scanning/anchore-result-diff.js anchore-reports/node_12.16.0-alpine-policy.json anchore-reports/${CIRCLE_PROJECT_REPONAME}*-policy.json
       # TODO: reenable
       # - slack/status:
       #     fail_only: true
