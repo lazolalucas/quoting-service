@@ -246,7 +246,10 @@ jobs:
             # TODO: put this back
             # cd /tmp/ci-config/container-scanning && ./mojaloop-policy-generator.js ~/project/.circleci/.anchore/policy_bundle.json
             # ls /root/project/.circleci/.anchore/policy_bundle.json
+            # Example default policy:
             cp /tmp/ci-config/container-scanning/example_policy_docker.json ~/project/.circleci/.anchore/policy_bundle.json
+
+            echo "${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
       - run:
           name: Pull base image locally
           command: |
@@ -263,8 +266,8 @@ jobs:
       - anchore/analyze_local_image:
           # Move to older version, version 0.7.0 was just published, and seems to be broken
           anchore_version: v0.6.1
-          # image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
-          image_name: "docker.io/node:12.16.0-alpine"
+          image_name: "docker.io/node:12.16.0-alpine ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}"
+          # image_name: "docker.io/node:12.16.0-alpine"
           # image_name: ${DOCKER_ORG}/${CIRCLE_PROJECT_REPONAME}:${CIRCLE_TAG}
           dockerfile_path: ./Dockerfile
           # Anchore bug: if policy_failure is `true`, reports don't get written - we manually check for failures below
